@@ -1,0 +1,17 @@
+# Ignorar pasta virtual do Python
+.venv/
+venv/
+env/
+
+# Ignorar pastas de build do PyInstaller/AutoPyToExe
+build/
+dist/
+__pycache__/
+*.spec
+
+# Ignorar o arquivo de senhas salvas (Segurança)
+dados_seguros.enc
+
+# Ignorar planilhas baixadas
+*.xls
+*.xlsx
