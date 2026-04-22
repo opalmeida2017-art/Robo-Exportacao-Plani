@@ -116,6 +116,10 @@ class App(ctk.CTk):
                                          hover_color="darkgreen", font=("Roboto", 16, "bold"),
                                          height=40, command=self.alternar_robo)
         self.btn_iniciar.pack(pady=(20, 0))
+        
+        self.btn_atualizar = ctk.CTkButton(self.frame_esquerda, text="Atualizar Sistema", fg_color="#1f538d", 
+                                           command=atualizar_sistema)
+        self.btn_atualizar.pack(pady=(10, 0))
 
         self.label_log = ctk.CTkLabel(self.frame_direita, text="Log de Processamento:", font=("Roboto", 16, "bold"))
         self.label_log.pack(anchor="nw", pady=(0, 5))

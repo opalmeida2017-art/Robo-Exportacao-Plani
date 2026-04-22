@@ -5,12 +5,13 @@ env/
 
 # Ignorar pastas de build do PyInstaller/AutoPyToExe
 build/
-dist/
 __pycache__/
 *.spec
 
-# Ignorar o arquivo de senhas salvas (Segurança)
+# Ignorar arquivos de senhas salvas (Segurança Máxima)
 dados_seguros.enc
+chave.key
+config.json
 
 # Ignorar planilhas baixadas
 *.xls
