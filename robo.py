@@ -43,13 +43,13 @@ CONFIG_FILTROS = {
         "botao_gerar": "formrelFilDespesasGerais:filtrar",
         "arquivo_nome": "relDespesasGerais.xls",
         "regras": {
-            'tipoData': '3', 'layout': '1', 'despesa': 'T', 'investimento': 'T',
+            'tipoData': '1', 'layout': '1', 'despesa': 'T', 'investimento': 'T',
             'rateio': 'T', 'finalizada': 'T', 'tipoDespesa': '10', 'faturada': 'T',
             'serieRQ': 'T', 'agruparPorGrupoD': 'N', 'resumidoStr': 'N', 'ordem': '1',
             'mostrarItemDet': 'N', 'mostrarObs': 'N', 'mostrarValoresRateados': 'N'
         },
         "descricoes": {
-            'tipoData': 'Emissão', 'layout': 'Paisagem', 'despesa': 'Todas', 'investimento': 'Todas',
+            'tipoData': 'Controle', 'layout': 'Paisagem', 'despesa': 'Todas', 'investimento': 'Todas',
             'rateio': 'Todas', 'finalizada': 'Todas', 'tipoDespesa': 'Geral', 'faturada': 'Todas',
             'serieRQ': 'Todas', 'agruparPorGrupoD': 'Não', 'resumidoStr': 'Não', 'ordem': 'Filial/Item/Nota',
             'mostrarItemDet': 'Não', 'mostrarObs': 'Não', 'mostrarValoresRateados': 'Não'
@@ -87,7 +87,7 @@ class RoboAutomacao:
             # O channel="chrome" força o robô a usar o seu Google Chrome real de forma invisível!
             browser = p.chromium.launch(headless=True, channel="chrome")
             context = browser.new_context(accept_downloads=True)
-            page = context.new_page() # <--- ADICIONE ESTA LINHA AQUI!
+            page = context.new_page() # LINHA ADICIONADA E CORRIGIDA
 
             try:
                 # --- PASSO 1: LOGIN ---
@@ -176,27 +176,44 @@ class RoboAutomacao:
                                     print(f" -> 🔄 CORRIGIDO na tela: '{id_p}' de '{atual}' para '{val_alvo}'")
                                     time.sleep(1.2)
 
-                        # --- DOWNLOAD ---
+                        # --- DOWNLOAD COM TRATAMENTO PARA PLANILHAS VAZIAS ---
                         print("\nIniciando processamento (Gerando arquivo...)")
                         nova_aba.locator(f'input[id*="{conf["botao_gerar"]}"]').first.click(force=True, no_wait_after=True)
                         
-                        selector_link = nova_aba.get_by_text("Clique aqui para visualizar arquivo", exact=False)
-                        selector_link.wait_for(state="visible", timeout=90000)
-                        
-                        with nova_aba.expect_download(timeout=60000) as download_info:
-                            selector_link.click()
-                        
-                        # --- BACKUP ---
-                        nome_base = conf["arquivo_nome"]
-                        caminho_completo = os.path.join(self.pasta, nome_base)
-                        if os.path.exists(caminho_completo):
-                            bkp = os.path.join(self.pasta, f"{nome_base.replace('.xls','')}_bkp_{datetime.now().strftime('%d%m%Y_%H%M%S')}.xls")
-                            os.rename(caminho_completo, bkp)
-                            print(f" -> Backup antigo criado: {bkp}")
-                        
-                        download_info.value.save_as(caminho_completo)
-                        print(f"✅ SUCESSO: Arquivo atualizado em {caminho_completo}")
-                        nova_aba.close()
+                        try:
+                            # Mantendo o tempo original de 90 segundos (90000 ms)
+                            selector_link = nova_aba.get_by_text("Clique aqui para visualizar arquivo", exact=False)
+                            selector_link.wait_for(state="visible", timeout=90000)
+                            
+                            with nova_aba.expect_download(timeout=60000) as download_info:
+                                selector_link.click()
+                            
+                            # --- BACKUP ---
+                            nome_base = conf["arquivo_nome"]
+                            caminho_completo = os.path.join(self.pasta, nome_base)
+                            if os.path.exists(caminho_completo):
+                                bkp = os.path.join(self.pasta, f"{nome_base.replace('.xls','')}_bkp_{datetime.now().strftime('%d%m%Y_%H%M%S')}.xls")
+                                os.rename(caminho_completo, bkp)
+                                print(f" -> Backup antigo criado: {bkp}")
+                            
+                            download_info.value.save_as(caminho_completo)
+                            print(f"✅ SUCESSO: Arquivo atualizado em {caminho_completo}")
+
+                        except Exception as e_download:
+                            if "Timeout" in str(e_download):
+                                print("\n⚠️ AVISO: O link de download não apareceu no tempo esperado (90s).")
+                                print(" -> POSSÍVEIS CAUSAS:")
+                                print("    1. O PERÍODO selecionado não possui nenhum dado (relatório vazio).")
+                                print("    2. Os filtros selecionados bloquearam todos os resultados.")
+                                print("    3. Lentidão extrema no servidor do sistema SAT.")
+                                print(" -> Pulando para o próximo...\n")
+                            else:
+                                print(f"❌ Erro durante o download: {e_download}")
+
+                        finally:
+                            # Garante que a aba secundária sempre será fechada, com sucesso ou erro
+                            if 'nova_aba' in locals() and not nova_aba.is_closed():
+                                nova_aba.close()
 
                         # --- RETORNO PARA NOVA PESQUISA ---
                         page.bring_to_front()
@@ -213,4 +230,4 @@ class RoboAutomacao:
             finally:
                 if 'browser' in locals():
                     print("\nFechando navegador e finalizando lote atual...")
-                    browser.close()
+                    browser.close() # FECHAMENTO CORRIGIDO

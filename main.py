@@ -1,11 +1,43 @@
 import customtkinter as ctk
+import urllib.request
+import os
+import sys
+import subprocess
 from tkinter import filedialog, messagebox
 import threading
-import sys
 import time # Adicionado para controle de tempo
 from datetime import datetime, timedelta # Adicionado para cálculos de hora
 from robo import RoboAutomacao
 from seguranca import GerenciadorDados
+
+# COLOQUE A FUNÇÃO AQUI (Antes de criar a janela e os botões)
+def atualizar_sistema():
+    # Link oficial atualizado para o seu repositório no GitHub
+    url_arquivo_novo = "https://raw.githubusercontent.com/opalmeida2017-art/Robo-Exportacao-Plani/main/dist/main.exe"
+    nome_atual = os.path.basename(sys.argv[0]) 
+    nome_temp = "robo_atualizado.exe"
+
+    try:
+        print("Baixando nova versão do GitHub... Aguarde.")
+        urllib.request.urlretrieve(url_arquivo_novo, nome_temp)
+
+        script_bat = f"""@echo off
+timeout /t 2 /nobreak > NUL
+del "{nome_atual}"
+ren "{nome_temp}" "{nome_atual}"
+start "" "{nome_atual}"
+del "%~f0"
+"""
+        with open("atualizador.bat", "w") as bat_file:
+            bat_file.write(script_bat)
+
+        print("Atualização concluída! Reiniciando o sistema...")
+        
+        subprocess.Popen("atualizador.bat", shell=True)
+        sys.exit()
+
+    except Exception as e:
+        print(f"Erro ao tentar atualizar: {e}")
 
 # ... (Classe RedirecionadorLog permanece igual) ...
 class RedirecionadorLog:
